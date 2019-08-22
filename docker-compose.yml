@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+
+  bouncer:
+    image: "anial/postfix-bouncer:2.0"
+    environment:
+      RECIPIENT: "${RECIPIENT}"
+    ports:
+      - "25:25"
+
+  mail-generator:
+    image: "anial/postal:2.1"
+    # if ${SERVER} has firewall with IP access, need direct acces to white ip 
+    network_mode: host
+    depends_on:
+      - bouncer
+    environment:
+      RECIPIENT: "${RECIPIENT}"
+      SENDER: "${SENDER}"
+      SERVER: "${SERVER}"
+    # argument -s don't work. Error "Can't gnutls_handshake"
+    command: "/usr/sbin/postal -M 25 -m 35 \
+              -t '${THREADS}' \
+              -c '${MSG_PER_CONN}' \
+              -r '${MAX_MSG_PER_MIN}' \
+              -f /postal/sender \
+              '${SERVER}' \
+              /postal/recipient"
